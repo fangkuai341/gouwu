@@ -1,166 +1,7 @@
 const db = require("../core/mysql");
+const fs = require("fs");
 const moment = require("moment");
 class CartsController {
-
-    //购物车 添加购物车
-    async addCart(request, resposne, next) {
-        try {
-            // 拿到 U_ID
-            let queryParams = [
-                request.Info.U_ID,
-                request.body.pid
-            ]
-            //根据用户的id和 产品的id 去数据库里查询一次,如果有 就修改输了,否则就插入一条新的
-            let query = " SELECT * FROM `carts` WHERE U_ID=? AND P_ID=? ";
-
-
-            let querReuslt = await db.exec(query, queryParams);
-
-            // 判断是否已经购买过?
-            if (querReuslt.length >= 1) {
-                //已经购买了
-                let updatePrams = [
-                    Number(request.body.pnumber),
-                    request.Info.U_ID,
-                    request.body.pid
-                ]
-
-                console.log(updatePrams)
-
-                let updateSQL = 'UPDATE `carts` SET P_NUMBER=P_NUMBER+? , P_TOTAL=P_NUMBER*P_PRICE WHERE U_ID=? AND P_ID=?;'
-
-                let updateResult = await db.exec(updateSQL, updatePrams);
-                if (updateResult && updateResult.affectedRows >= 1) {
-
-                    resposne.json({
-                        code: 200,
-                        msg: "加入购车成功u",
-                    })
-                } else {
-                    resposne.json({
-                        code: 200,
-                        msg: "加入购车失败u",
-
-                    })
-                }
-            } else {
-                //还没购买
-
-                let insertParmas = [
-                    request.Info.U_ID,
-                    request.body.pid,
-                    request.body.pname,
-                    request.body.pimg,
-                    request.body.pnumber,
-                    request.body.pprice,
-                    request.body.pprice * request.body.pnumber,
-                    moment().format("YYYY-MM-DD HH:mm:ss")
-
-                ]
-                let insertSql = "INSERT INTO carts (`U_ID`,`P_ID`,`P_NAME`,`P_IMG`,`P_NUMBER`,`P_PRICE`,P_TOTAL) ";
-                insertSql += " values(?,?,?,?,?,?,?,?);";
-
-                let resultInset = await db.exec(insertSql, insertParmas);
-
-                //affectedRows
-                if (resultInset && resultInset.affectedRows >= 1) {
-                    resposne.json({
-                        code: 200,
-                        msg: "加入购车成功i",
-                    })
-                } else {
-                    resposne.json({
-                        code: 200,
-                        msg: "加入购车失败i",
-                    })
-                }
-
-
-
-            }
-
-        } catch (error) {
-            resposne.json({
-                code: -200,
-                msg: "加入购车失败",
-                error
-            })
-        }
-
-    }
-    // 修改数量
-    async modifyCart(request, resposne, next) {
-
-        let parmas = [
-            request.body.pnumber,
-            request.body.cid,
-        ]
-        let sql = "UPDATE carts SET `P_NUMBER`=?  ,`P_TOTAL`=`P_NUMBER`*`P_PRICE` WHERE c_id=? and P_STATUS=1 ;";
-
-        try {
-            let result = await db.exec(sql, parmas);
-            if (result && result.affectedRows >= 1) {
-                resposne.json({
-                    msg: "修改成功",
-                    code: 200
-                })
-            } else {
-                resposne.json({
-                    msg: "修改失败",
-                    code: 200
-                })
-            }
-
-        } catch (error) {
-            console.log(error);
-
-            resposne.json({
-                msg: "修改失败",
-                code: -200,
-                error //error 之后再后台的控制台中输出,不能带到前端,测试而已
-            })
-        }
-
-    }
-    // 删除购物车
-    async deleteCart(request, resposne, next) {
-
-        let parmas = [
-            request.body.cid,
-        ]
-        let sql = "UPDATE carts SET `P_STATUS` = 0  ,`P_TOTAL`=`P_NUMBER`*`P_PRICE` WHERE c_id=? and P_STATUS=1;";
-
-        try {
-            let result = await db.exec(sql, parmas);
-            if (result && result.affectedRows >= 1) {
-                resposne.json({
-                    msg: "删除成功",
-                    code: 200
-                })
-            } else {
-                resposne.json({
-                    msg: "删除失败",
-                    code: 200
-                })
-            }
-
-        } catch (error) {
-            console.log(error);
-
-            resposne.json({
-                msg: "删除失败",
-                code: -200,
-                error //error 之后再后台的控制台中输出,不能带到前端,测试而已
-            })
-        }
-
-    }
-    // 结算 把状态1 改成2
-    async giveMoney(request, resposne, next) {
-        resposne.send("addCart")
-    }
-
-
     //添加文章
     async addWenzhang(request, resposne, next) {
         try {
@@ -272,6 +113,115 @@ class CartsController {
             })
         }
 
+    }
+    //搜素文章
+    async getsearchCartByUser(request, resposne, next) {
+        //1.得到当前的用户id
+        let sql = "select * from wenzhang WHERE CONCAT(title,introduction,biaoqian)like ? ";
+        let cs = `%${request.query.serchCon}%`
+        let parmas = [
+            cs,
+        ]
+        try {
+            let result = await db.exec(sql, parmas);
+            resposne.json({
+                code: 200,
+                msg: "查询成功",
+                data: result
+            })
+
+        } catch (error) {
+            resposne.json({
+                code: -200,
+                msg: "查询失败",
+                data: error
+            })
+        }
+
+    }
+    //上传图片
+    async updatImg(request, resposne, next) {
+        fs.renameSync(request.file.path, `upload/${request.file.originalname}`)
+        resposne.send({
+            "errno": 0,
+            msg: "上传成功",
+            data: [
+                {
+                    "url": `http://localhost:8080/${request.file.originalname}`, // 图片 src ，必须
+                    'file': request.file
+                }
+            ]
+        })
+    }
+    //获取最新文章
+    async getnewwenzahngconcetByUser(request, resposne, next) {
+        let sql = "SELECT id FROM wenzhang where time=(select max(time) from wenzhang)";
+        try {
+            let result = await db.exec(sql);
+            resposne.json({
+                code: 200,
+                msg: "查询成功",
+                data: result[0].id
+            })
+
+        } catch (error) {
+            resposne.json({
+                code: -200,
+                msg: "查询失败"
+            })
+        }
+
+    }
+    //获取随机文章
+    async getrandwenzahngconcetByUser(request, resposne, next) {
+        let sql = "SELECT id FROM wenzhang ORDER BY RAND() LIMIT 1";
+        try {
+            let result = await db.exec(sql);
+            resposne.json({
+                code: 200,
+                msg: "查询成功",
+                data: result[0].id
+            })
+
+        } catch (error) {
+            resposne.json({
+                code: -200,
+                msg: "查询失败"
+            })
+        }
+
+    }
+    //查看增加
+    async addshow(req, res, next) {
+        let sqltwo = 'update wenzhang set `show` = `show` + 1 where id= ?'
+        let paramsTwo = [+req.body.wenzhangid]
+        try {
+            let result = await db.exec(sqltwo, paramsTwo)
+            if (result) {
+                res.json({
+                    code: 200,
+                    msg: '修改成功',
+                    data: result,
+                })
+            } else {
+                res.json({
+                    code: 200,
+                    msg: '修改成功'
+                })
+            }
+        } catch (err) {
+            res.json({
+                code: 500,
+                msg: err
+            })
+        }
+        function createToken(data) {
+            return jwt.encode({
+                exp: Date.now() + (1000 * 60 * 60 * 24),
+                info: data
+            }, require("../config").tokenKey);
+
+        }
     }
 }
 
