@@ -57,10 +57,10 @@ class CartsController {
     async myans(request, resposne, next) {
         try {
             let insertParmas = [
-                request.body.uID,
                 request.body.myans,
+                request.body.uID,
             ]
-            let insertSql = "UPDATE liuyan set myans='?' WHERE uID=?;";
+            let insertSql = "UPDATE liuyan set myans=? WHERE uID=?;";
             let resultInset = await db.exec(insertSql, insertParmas);
             if (resultInset && resultInset.affectedRows >= 1) {
                 resposne.json({
