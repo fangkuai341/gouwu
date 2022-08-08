@@ -54,6 +54,35 @@ class CartsController {
         }
 
     }
+    async myans(request, resposne, next) {
+        try {
+            let insertParmas = [
+                request.body.uID,
+                request.body.myans,
+            ]
+            let insertSql = "UPDATE liuyan set myans='?' WHERE uID=?;";
+            let resultInset = await db.exec(insertSql, insertParmas);
+            if (resultInset && resultInset.affectedRows >= 1) {
+                resposne.json({
+                    code: 200,
+                    msg: "插入成功",
+                    data: resultInset
+                })
+            } else {
+                resposne.json({
+                    code: 200,
+                    msg: "插入失败",
+                })
+            }
+        } catch (error) {
+            resposne.json({
+                code: -200,
+                msg: "插入失败",
+                error
+            })
+        }
+
+    }
 }
 
 module.exports = new CartsController();
