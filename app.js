@@ -15,6 +15,7 @@ server.use('/msg', require('./router/msg'));
 server.use('/getmsg', require('./router/getmsg'));
 server.use(express.static('../boke/dist'))
 server.use(express.static('./upload'));
+server.use(express.static('../boke/dist'));
 server.listen(8080, () => {
     console.log('server is running at port 8080')
 })

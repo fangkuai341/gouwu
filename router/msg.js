@@ -28,4 +28,5 @@ router.use((request, resposne, next) => {
 })
 const upload = require('../middlewares/upload')
 router.post("/setMsg", require("../controller/msg").setMsg);
+
 module.exports = router;
