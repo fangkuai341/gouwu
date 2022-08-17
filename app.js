@@ -13,6 +13,7 @@ server.use('/wenzi', require('./router/wenzi'));
 server.use('/dianzan', require('./router/dianzan'));
 server.use('/msg', require('./router/msg'));
 server.use('/getmsg', require('./router/getmsg'));
+server.use(express.static('../boke/dist'))
 server.use(express.static('./upload'));
 server.use(express.static('../boke/dist'));
 server.listen(8080, () => {
