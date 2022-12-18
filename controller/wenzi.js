@@ -135,7 +135,7 @@ class CartsController {
       msg: "上传成功",
       data: [
         {
-          url: `http://116.204.65.53/${request.file.originalname}`, // 图片 src ，必须
+          url: `http://106.55.233.23/${request.file.originalname}`, // 图片 src ，必须
           file: request.file,
         },
       ],
